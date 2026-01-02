@@ -14,7 +14,9 @@ Do this:
 4) Add nix-clawdis as an input.
 5) Enable the Clawdis Home Manager module with Telegram-first defaults.
 6) Use my bot token file and allowFrom IDs.
-7) Run home-manager switch and verify with `clawdis status` + `clawdis health`.
+7) Run home-manager switch and verify with:
+   - `launchctl print gui/$UID/com.joshp123.clawdis.gateway | grep state`
+   - `tail -n 50 ~/.clawdis/logs/clawdis-gateway.log`
 
 My inputs:
 - macOS version: [FILL IN]

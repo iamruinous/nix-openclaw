@@ -23,7 +23,7 @@ The goal is to make Clawdis installation and configuration feel as simple as: ad
 
 Goals:
 - Provide a Nix package for Clawdis and a Home Manager module with batteries-included defaults.
-- Provide a flake app and CLI entrypoint for quick start and health checks.
+- Provide a flake app for the gateway CLI and a quick verification path.
 - Make configuration technically light with explicit options and guardrails.
 - Provide Telegram-first examples and workflows.
 - Provide clear troubleshooting and a minimal verification checklist.
@@ -62,21 +62,22 @@ Non-goals:
 
 Top-level options (Home Manager):
 - `programs.clawdis.enable` (bool, default false)
-- `programs.clawdis.package` (package, default `pkgs.clawdis`)
-- `programs.clawdis.config` (attrset -> rendered to `~/.clawdis/clawdis.json`)
+- `programs.clawdis.package` (package, default `pkgs.clawdis-gateway`)
+- `programs.clawdis.stateDir` (string, default `~/.clawdis`)
+- `programs.clawdis.workspaceDir` (string, default `~/.clawdis/workspace`)
 - `programs.clawdis.providers.telegram.enable` (bool, default false)
 - `programs.clawdis.providers.telegram.botTokenFile` (path, required if enabled)
 - `programs.clawdis.providers.telegram.allowFrom` (list of chat IDs, required if enabled)
-- `programs.clawdis.providers.whatsapp.enable` (bool, default false)
-- `programs.clawdis.providers.whatsapp.web.enabled` (bool, default false)
+- `programs.clawdis.providers.telegram.requireMention` (bool, default false)
 - `programs.clawdis.routing.queue.mode` (enum: queue|interrupt, default interrupt)
 - `programs.clawdis.routing.queue.bySurface` (attrset)
-- `programs.clawdis.health.enable` (bool, default true)
+- `programs.clawdis.routing.groupChat.requireMention` (bool, default false)
+- `programs.clawdis.launchd.enable` (bool, default true)
 
 Defaults:
 - All providers disabled.
-- Queue mode defaults to interrupt for Telegram/WhatsApp, queue for Discord/WebChat.
-- No allowlist means no replies in direct chats.
+- Queue mode defaults to interrupt for Telegram, queue for Discord/WebChat.
+- No allowlist means no replies at all.
 
 ### 4.2) Tradeoffs (why this design)
 
@@ -88,7 +89,7 @@ Defaults:
 
 Minimum inputs (new user):
 - Nix with flakes enabled.
-- One provider token (Telegram or WhatsApp/web login).
+- Telegram bot token.
 - A minimal config snippet.
 
 Workflow profiles (Telegram-first):
@@ -97,19 +98,14 @@ Workflow profiles (Telegram-first):
    - Provide bot token
    - Add allowFrom chat IDs
    - Run build
-2) **WhatsApp/web**
-   - Enable module
-   - Run QR login helper
-   - Verify status
-3) **Multi-provider**
-   - Telegram + WhatsApp enabled
-   - Separate allowlists
+2) **Multi-chat allowlist**
+   - Add multiple Telegram chat IDs
    - Verify routing
 
 Validation rules:
-- Config must pass schema validation before the service starts.
+- Nix assertions require tokens and allowlists when providers are enabled.
 - Providers must not start unless explicitly enabled and configured.
-- Health command must return configured and provider status.
+- Generated config is deterministic from Nix options.
 
 ### 5.1) Example configs (inline, required)
 
@@ -129,42 +125,14 @@ Telegram minimal (opinionated defaults):
 }
 ```
 
-Telegram + WhatsApp (batteries-included workflow):
-
-```nix
-{
-  programs.clawdis = {
-    enable = true;
-    providers = {
-      telegram = {
-        enable = true;
-        botTokenFile = "/run/agenix/telegram-bot-token";
-        allowFrom = [ 12345678 -1001234567890 ];
-      };
-      whatsapp = {
-        enable = true;
-        web.enabled = true;
-      };
-    };
-    routing.queue = {
-      mode = "interrupt";
-      bySurface = {
-        telegram = "interrupt";
-        whatsapp = "interrupt";
-        discord = "queue";
-        webchat = "queue";
-      };
-    };
-  };
-}
-```
+WhatsApp example is deferred until the Telegram-first path is fully verified.
 
 ## 6) Artifacts / outputs
 
-- `clawdis` binary in PATH.
+- `clawdis` gateway binary in PATH.
 - Declarative `~/.clawdis/clawdis.json` (generated).
-- `clawdis status` and `clawdis health` outputs for verification.
-- Example configs inline in the RFC (Telegram-first, WhatsApp optional).
+- Launchd service `com.joshp123.clawdis.gateway` (macOS).
+- Example configs inline in the RFC (Telegram-first).
 
 ## 7) State machine (if applicable)
 
@@ -178,8 +146,8 @@ None. This RFC does not introduce new protobuf APIs.
 
 Users interact via:
 - Nix config (flake + module options)
-- CLI (`clawdis status`, `clawdis health`, `clawdis send`)
-- Provider-specific setup steps (Telegram token, WhatsApp QR)
+- CLI (`clawdis` gateway binary)
+- Provider-specific setup steps (Telegram token)
 
 Agent-friendly flow:
 - Docs include a “copy-paste config” section with clear placeholders.
@@ -192,8 +160,8 @@ The public docs must include a step-by-step “Zero to Clawdis” guide that cov
 2) Enable flakes and basic Nix config.
 3) Create a minimal flake (template).
 4) Add `nix-clawdis` input and HM module.
-5) Paste minimal config snippet (Telegram or WhatsApp).
-6) Run build and verify with `clawdis status` / `clawdis health`.
+5) Paste minimal config snippet (Telegram).
+6) Run build and verify via launchd status + a test message.
 
 ### 9.2) Agent copypasta (Codex/Claude)
 
@@ -219,7 +187,7 @@ Not applicable (no new APIs). Primary flows are CLI and provider interactions.
 ## 12) Determinism and validation
 
 - Pin Clawdis source to a known revision or release tag.
-- Schema validation required for generated config.
+- Nix assertions validate required tokens and allowlists.
 - Refuse to start provider services without required tokens/credentials.
 - Strict allowlists for inbound chat IDs.
 - Emit clear, actionable error messages when config is invalid.
@@ -233,7 +201,7 @@ Not applicable (no new APIs). Primary flows are CLI and provider interactions.
 Docs structure (public-facing):
 - `README.md` (30-second quick start + install matrix)
 - `docs/quickstart-telegram.md`
-- `docs/quickstart-whatsapp.md`
+- `docs/quickstart-whatsapp.md` (optional, future)
 - `docs/configuration.md` (all options, defaults, and examples)
 - `docs/troubleshooting.md` (copy-paste commands + expected outputs)
 - `docs/zero-to-clawdis.md` (Determinate Nix install + macOS bootstrap path)
@@ -242,7 +210,7 @@ Docs structure (public-facing):
 ## 14) Testing philosophy and trust
 
 - Build derivation test: Nix build must succeed on macOS (v1).
-- Smoke test: `clawdis status` and `clawdis health` output.
+- Smoke test: launchd status + log output + minimal Telegram ping (documented).
 - Provider tests: Telegram token presence and minimal send test (documented).
 - No CI in v1 (manual validation checklist only).
 
@@ -251,9 +219,8 @@ Docs structure (public-facing):
 1) Repo scaffold with flake, package derivation, minimal docs.
 2) Home Manager module with basic config generation and safe defaults.
 3) Telegram quick start and example config.
-4) WhatsApp/web quick start and example config.
-5) Troubleshooting guide + FAQ.
-6) Public release and announcement.
+4) Troubleshooting guide + FAQ.
+5) Public release and announcement.
 
 ### 15.1) Rollout / rollback
 
@@ -264,10 +231,9 @@ Docs structure (public-facing):
 
 1) Create `nix-clawdis` repo structure and flake.
 2) Implement package derivation (pin Clawdis source).
-3) Implement HM module with schema validation and config generation.
+3) Implement HM module with assertions and config generation.
 4) Document CLI usage (`clawdis` gateway).
 5) Add examples + docs (README + quickstarts + troubleshooting).
-6) Add CI for build + formatting + docs checks.
 
 ## 17) Brutal self-review (required)
 
@@ -281,7 +247,7 @@ Findings (by persona):
 - End user: Needed a technically light path with clear next command; added 9.1 + 9.2 to require that output.
 
 Open gaps (must resolve before “Reviewed”):
-- WhatsApp/web QR flow still described but not specified (command + output).
+- Verification commands and expected outputs need to be explicit in docs.
 
 Second pass review (delta):
 - Tightened language to “technically light” and made Telegram-first explicit.
@@ -289,14 +255,22 @@ Second pass review (delta):
 - Moved examples into inline RFC blocks to keep the document self-contained.
 - Added Zero-to-Clawdis + Agent Copypasta requirements as first-class docs.
 
-## 18) Implementation status (current)
+## 18) Definition of Done (DoD)
+
+This RFC is complete when:
+- The repo is public with a clear README and Zero‑to‑Clawdis guide.
+- Telegram‑first quickstart works on macOS with a real bot token.
+- `nix run .#clawdis` launches the gateway and responds in an allowlisted chat.
+- Documentation includes a copy‑paste agent prompt and explicit verification steps.
+- A release tag is published and referenced in examples.
+
+## 19) Implementation status (current)
 
 Implemented in `nix-clawdis` repo:
 - Flake outputs: package + app + devShell + HM module + darwin wrapper
-- Clawdis gateway package pinned to `d4ee40db53a1d00b448a1153f2be58007213110f`
+- Clawdis gateway package pinned to `e5cae2a2e4676111d7bbf1cd1d9956e78ca9088a` (v2.0.0-beta4)
 - Telegram-first HM module (launchd on macOS)
 - README + Zero-to-Clawdis + Agent Copypasta + Quickstart/Config/Troubleshooting docs
 
 Remaining:
-- Validate pnpmDeps hash against current pin
-- Add WhatsApp quickstart once Telegram path is verified
+- Publish a release tag once Telegram flow is verified end‑to‑end

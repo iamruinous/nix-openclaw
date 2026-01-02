@@ -6,7 +6,7 @@ This guide is for people who have never used Nix. You will:
 3) Create a local flake
 4) Add nix-clawdis
 5) Paste a minimal Telegram config
-6) Verify with `clawdis status` and `clawdis health`
+6) Verify via launchd status + logs
 
 ## 1) Install Determinate Nix
 
@@ -91,11 +91,14 @@ home-manager switch --flake .#josh
 ## 5) Verify Clawdis
 
 ```bash
-nix run .#clawdis -- status
-nix run .#clawdis -- health
+launchctl print gui/$UID/com.joshp123.clawdis.gateway | grep state
+tail -n 50 ~/.clawdis/logs/clawdis-gateway.log
 ```
 
-If both commands return OK, you are done.
+If the agent is running and logs show Telegram connected, send a test message in an allowlisted chat.
+Expected:
+- `state = running`
+- Log shows startup without fatal errors
 
 ## Troubleshooting
 

@@ -48,8 +48,11 @@ home-manager switch --flake .#josh
 ## 4) Verify
 
 ```bash
-nix run .#clawdis -- status
-nix run .#clawdis -- health
+launchctl print gui/$UID/com.joshp123.clawdis.gateway | grep state
+tail -n 50 ~/.clawdis/logs/clawdis-gateway.log
 ```
 
-If both commands are OK, you’re done.
+If the agent is running and logs show Telegram connected, send a test message in an allowlisted chat.
+Expected:
+- `state = running`
+- Log shows startup without fatal errors

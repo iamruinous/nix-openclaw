@@ -39,15 +39,15 @@ Minimal config:
 Then:
 
 ```bash
-clawdis status
-clawdis health
+launchctl print gui/$UID/com.joshp123.clawdis.gateway | grep state
+tail -n 50 ~/.clawdis/logs/clawdis-gateway.log
 ```
 
 ## What’s included (v1)
 
 - macOS-only (nix-darwin + Home Manager)
 - Telegram-first docs + defaults
-- Troubleshooting checklist + health checks
+- Troubleshooting checklist + verification steps
 
 ## Not included (v1)
 
@@ -78,7 +78,7 @@ What I need:
 3) Add nix-clawdis as an input
 4) Enable the Clawdis module with Telegram-first defaults
 5) Configure my bot token + allowFrom list
-6) Run build + show `clawdis status` and `clawdis health`
+6) Run build + show launchd status + recent logs
 
 My setup:
 - macOS version: [FILL IN]
