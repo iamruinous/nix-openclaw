@@ -10,6 +10,14 @@ All configuration lives under `programs.clawdis`.
 - `programs.clawdis.workspaceDir` (string) — workspace directory
 - `programs.clawdis.launchd.enable` (bool) — run gateway via launchd (macOS)
 
+## Defaults (sensible v1)
+
+- Providers disabled unless explicitly enabled
+- Telegram group mentions not required (`requireMention = false`)
+- Queue mode `interrupt` (fast replies)
+- `routing.queue.bySurface` defaults to Telegram/WhatsApp interrupt, Discord/WebChat queue
+- `allowFrom` required when Telegram is enabled
+
 ## Telegram (v1)
 
 - `programs.clawdis.providers.telegram.enable` (bool)
