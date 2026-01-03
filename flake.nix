@@ -38,6 +38,7 @@
           module-eval = pkgs.runCommand "clawdis-module-eval" {
             nativeBuildInputs = [ pkgs.nix ];
           } ''
+            export NIX_CONFIG=""
             ${pkgs.nix}/bin/nix-instantiate --parse ${./nix/modules/home-manager/clawdis.nix} > $out
             ${pkgs.nix}/bin/nix-instantiate --parse ${./nix/modules/darwin/clawdis.nix} >> $out
           '';
