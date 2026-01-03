@@ -151,6 +151,18 @@ let
         description = "launchd label for this instance.";
       };
 
+      app.install.enable = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Install Clawdis.app for this instance.";
+      };
+
+      app.install.path = lib.mkOption {
+        type = lib.types.str;
+        default = "${homeDir}/Applications/Clawdis.app";
+        description = "Destination path for this instance's Clawdis.app bundle.";
+      };
+
       appDefaults = {
         enable = lib.mkOption {
           type = lib.types.bool;
@@ -188,6 +200,12 @@ let
     appDefaults = {
       enable = true;
       attachExistingOnly = true;
+    };
+    app = {
+      install = {
+        enable = false;
+        path = "${homeDir}/Applications/Clawdis.app";
+      };
     };
   };
 
@@ -255,10 +273,22 @@ let
       gatewayPort = inst.gatewayPort;
     };
 
+    appInstall = if !(pkgs.stdenv.hostPlatform.isDarwin && inst.app.install.enable && appPackage != null) then
+      null
+    else {
+      name = lib.removePrefix "${homeDir}/" inst.app.install.path;
+      value = {
+        source = "${appPackage}/Applications/Clawdis.app";
+        recursive = true;
+        force = true;
+      };
+    };
+
     package = inst.package;
   };
 
   instanceConfigs = lib.mapAttrsToList mkInstanceConfig enabledInstances;
+  appInstalls = lib.filter (item: item != null) (map (item: item.appInstall) instanceConfigs);
 
   appDefaults = lib.foldl' (acc: item: lib.recursiveUpdate acc item.appDefaults) {} instanceConfigs;
 
@@ -289,6 +319,12 @@ in {
       type = lib.types.nullOr lib.types.package;
       default = null;
       description = "Optional Clawdis app package (defaults to package if unset).";
+    };
+
+    installApp = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Install Clawdis.app at the default location.";
     };
 
     stateDir = lib.mkOption {
@@ -384,13 +420,16 @@ in {
 
     home.packages = lib.unique (map (item: item.package) instanceConfigs);
 
-    home.file = (lib.listToAttrs (map (item: item.homeFile) instanceConfigs)) // (lib.optionalAttrs (pkgs.stdenv.hostPlatform.isDarwin && appPackage != null) {
-      "Applications/Clawdis.app" = {
-        source = "${appPackage}/Applications/Clawdis.app";
-        recursive = true;
-        force = true;
-      };
-    });
+    home.file =
+      (lib.listToAttrs (map (item: item.homeFile) instanceConfigs))
+      // (lib.optionalAttrs (pkgs.stdenv.hostPlatform.isDarwin && appPackage != null && cfg.installApp) {
+        "Applications/Clawdis.app" = {
+          source = "${appPackage}/Applications/Clawdis.app";
+          recursive = true;
+          force = true;
+        };
+      })
+      // (lib.listToAttrs appInstalls);
 
     home.activation.clawdisDirs = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       /bin/mkdir -p ${lib.concatStringsSep " " (lib.concatMap (item: item.dirs) instanceConfigs)}
