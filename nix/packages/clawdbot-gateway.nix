@@ -68,6 +68,7 @@ stdenv.mkDerivation (finalAttrs: {
 
     pnpm config set store-dir "$STORE_PATH"
     pnpm config set package-import-method clone-or-copy
+    pnpm config set manage-package-manager-versions false
   '';
 
   buildPhase = ''
