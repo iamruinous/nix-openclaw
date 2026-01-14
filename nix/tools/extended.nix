@@ -35,11 +35,7 @@ let
     "camsnap"
     "bird"
     "sag"
-  ]
-  ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
     "summarize"
-  ]
-  ++ [
     "openhue-cli"
     "wacli"
     "sonoscli"
