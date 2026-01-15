@@ -2137,6 +2137,16 @@ in
         textChunkLimit = lib.mkOption {
           type = t.int;
         };
+        thread = lib.mkOption {
+          type = t.submodule { options = {
+          historyScope = lib.mkOption {
+            type = t.enum [ "thread" "channel" ];
+          };
+          inheritParent = lib.mkOption {
+            type = t.bool;
+          };
+        }; };
+        };
       }; });
       };
       actions = lib.mkOption {
@@ -2304,6 +2314,16 @@ in
       };
       textChunkLimit = lib.mkOption {
         type = t.int;
+      };
+      thread = lib.mkOption {
+        type = t.submodule { options = {
+        historyScope = lib.mkOption {
+          type = t.enum [ "thread" "channel" ];
+        };
+        inheritParent = lib.mkOption {
+          type = t.bool;
+        };
+      }; };
       };
     }; };
     };
