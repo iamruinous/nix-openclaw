@@ -3297,6 +3297,31 @@ in
         };
       }; });
       };
+      installs = lib.mkOption {
+        type = t.attrsOf (t.submodule { options = {
+        hooks = lib.mkOption {
+          type = t.listOf (t.str);
+        };
+        installPath = lib.mkOption {
+          type = t.str;
+        };
+        installedAt = lib.mkOption {
+          type = t.str;
+        };
+        source = lib.mkOption {
+          type = t.oneOf [ t.enum [ "npm" ] t.enum [ "archive" ] t.enum [ "path" ] ];
+        };
+        sourcePath = lib.mkOption {
+          type = t.str;
+        };
+        spec = lib.mkOption {
+          type = t.str;
+        };
+        version = lib.mkOption {
+          type = t.str;
+        };
+      }; });
+      };
       load = lib.mkOption {
         type = t.submodule { options = {
         extraDirs = lib.mkOption {
