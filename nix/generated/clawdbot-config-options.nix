@@ -3029,6 +3029,9 @@ in
         sendReadReceipts = lib.mkOption {
           type = t.bool;
         };
+        startupTimeoutMs = lib.mkOption {
+          type = t.int;
+        };
         textChunkLimit = lib.mkOption {
           type = t.int;
         };
@@ -3155,6 +3158,9 @@ in
       };
       sendReadReceipts = lib.mkOption {
         type = t.bool;
+      };
+      startupTimeoutMs = lib.mkOption {
+        type = t.int;
       };
       textChunkLimit = lib.mkOption {
         type = t.int;
@@ -5067,6 +5073,9 @@ in
     };
     tts = lib.mkOption {
       type = t.submodule { options = {
+      auto = lib.mkOption {
+        type = t.enum [ "off" "always" "inbound" "tagged" ];
+      };
       edge = lib.mkOption {
         type = t.submodule { options = {
         enabled = lib.mkOption {
